@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Croppie Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="vendor/bootstrap/css/bootstrap.min.css">
+  <link rel="stylesheet" href="vendor/croppie/croppie.css">
+
+  <script src="vendor/jquery-1.12.4.min.js"></script>
+  <script src="vendor/resizer.js"></script>
+  <script src="vendor/exif.js"></script>
+  <script src="vendor/croppie/croppie.js"></script>
+
+  <!--
+  <script src="vendor/load-image/load-image.js"></script>
+  <script src="vendor/load-image/load-image-orientation.js"></script>
+  -->
+
+  <style>
+    .btn{
+      position: relative;
+    }
+    .btn input[type="file"]{
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      opacity: 0;
+    }
+    /*手機版不需要顯示那個滑桿*/
+    @media (max-width: 767px){
+      .cr-slider-wrap{
+        display: none;
+      }
+    }
+
+    .image-uploader #next{ display: none }
+    .image-uploader.ready #next{ display: inline-block; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>DEMO</h1>
+
+    <form class="image-uploader well" action="upload.php" method="post" enctype="multipart/form-data">
+      <div class="croppie"></div>
+      <input type="hidden" name="cropdata">
+      <input type="hidden" name="cropped">
+
+      <button class="btn btn-primary">上傳圖片
+        <input type="file" id="upload" value="Choose a file" accept="image/*">
+      </button>
+      <button class="btn btn-primary" id="next">下一步</button>
+
+    </form>
+
+  </div>
+
+  <script>
+  var $uploadCrop = $('.croppie').croppie({
+    // showZoomer: false,
+    enableExif: true,
+    enableOrientation: true,
+    viewport: { width: 300, height: 300, type: 'square' }
+  });
+
+  $(document).on('change', '#upload', readFile);
+  $(document).on('click', '#next', getPoints);
+
+  function readFile() {
+    var input = this;
+    if (input.files && input.files[0]) {
+
+      // 編輯用的照片用縮小過的
+      resize(input.files[0], 600, 600, function(thumbnail, orientation){
+        $('.image-uploader').addClass('ready');
+        $uploadCrop.croppie('bind', {
+          url: thumbnail,
+          orientation: orientation || 1
+        });
+      });
+
+    }
+    else {
+      alert('您的瀏覽器不支援');
+    }
+  }
+
+  function dataURItoBlob(dataurl) {
+    var arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+    bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+    while(n--){
+      u8arr[n] = bstr.charCodeAt(n);
+    }
+    return new Blob([u8arr], {type:mime});
+  }
+
+  function getPoints(event){
+    $('form [name=cropdata]').val(JSON.stringify($uploadCrop.croppie('get')));
+    alert(JSON.stringify($uploadCrop.croppie('get')));
+
+    $uploadCrop.croppie('result', 'canvas').then(function(base64Image){
+      // console.log(base64Image)
+      console.log(base64Image.length)
+      $('form [name="cropped"]').val(base64Image)
+      // $('form [name="cropped"]')[0].value = dataURItoBlob(base64Image);
+
+      $('form').submit();
+    });
+
+
+    event.preventDefault();
+    return false;
+
+    // 選擇文字
+
+    // $('form').submit();
+  }
+
+  </script>
+
+</body>
+</html>
